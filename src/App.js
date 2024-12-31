@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Card, CardContent } from './components/ui/card';
 import { Progress } from './components/ui/progress';
 import { Brain, ChevronRight, Target, BarChart } from 'lucide-react';
+import _ from 'lodash';
 
 const QUESTIONS = [
   {
@@ -72,30 +73,37 @@ export default function MindsetQuiz() {
     return Object.entries(answers).reduce((total, [_, value]) => total + value, 0);
   };
 
-  const handleAnswer = (score) => {
-    const question = QUESTIONS[currentQuestion];
-    const actualScore = question.reverse ? (3 - score) : score;
-    
-    setAnswers(prev => ({
-      ...prev,
-      [question.id]: actualScore
-    }));
+  // Debounced handlers
+  const handleAnswer = useCallback(
+    _.debounce((score) => {
+      const question = QUESTIONS[currentQuestion];
+      const actualScore = question.reverse ? (3 - score) : score;
+      
+      setAnswers(prev => ({
+        ...prev,
+        [question.id]: actualScore
+      }));
 
-    if (currentQuestion < QUESTIONS.length - 1) {
-      setCurrentQuestion(prev => prev + 1);
-    } else {
-      setQuizState('summary');
-    }
-  };
+      if (currentQuestion < QUESTIONS.length - 1) {
+        setCurrentQuestion(prev => prev + 1);
+      } else {
+        setQuizState('summary');
+      }
+    }, 500, { leading: true, trailing: false }),
+    [currentQuestion]
+  );
 
-  const startQuiz = () => {
-    setQuizState('quiz');
-    setCurrentQuestion(0);
-    setAnswers({});
-  };
+  const startQuiz = useCallback(
+    _.debounce(() => {
+      setQuizState('quiz');
+      setCurrentQuestion(0);
+      setAnswers({});
+    }, 500, { leading: true, trailing: false }),
+    []
+  );
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-emerald-900 to-cyan-900 text-white p-4">
+    <div className="select-none flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-emerald-900 to-cyan-900 text-white p-4">
       <Card className="w-full max-w-lg border-2 border-emerald-400 bg-gradient-to-b from-emerald-900 to-cyan-900 shadow-xl">
         <CardContent className="p-6">
           {quizState === 'intro' ? (
@@ -122,7 +130,7 @@ export default function MindsetQuiz() {
 
               <button 
                 onClick={startQuiz}
-                className="w-full p-6 bg-emerald-300 hover:bg-emerald-200 text-emerald-950 font-bold text-xl rounded-lg transition-all transform hover:scale-105"
+                className="w-full p-6 bg-emerald-300 hover:bg-emerald-200 text-emerald-950 font-bold text-xl rounded-lg transition-all duration-300 transform hover:scale-105 active:scale-95"
               >
                 Begin Assessment
               </button>
@@ -137,11 +145,9 @@ export default function MindsetQuiz() {
                 </div>
                 
                 <div>
-                  <div className="flex justify-between mb-2">
-                    <span className="text-indigo-50">Growth Orientation</span>
-                    <span className="text-indigo-300">
-                      {Math.round((calculateScore() / 30) * 100)}%
-                    </span>
+                  <div className="mb-2">
+                    <span className="text-indigo-50">Fixed Mindset</span>
+                    <span className="float-right text-indigo-50">Growth Mindset</span>
                   </div>
                   <Progress 
                     value={(calculateScore() / 30) * 100} 
@@ -159,12 +165,22 @@ export default function MindsetQuiz() {
                 </div>
               </div>
 
-              <button 
-                onClick={startQuiz}
-                className="w-full p-6 bg-indigo-300 hover:bg-indigo-200 text-indigo-950 font-bold text-xl rounded-lg transition-all transform hover:scale-105"
-              >
-                Take Quiz Again
-              </button>
+              <div className="space-y-3">
+                <a 
+                  href="https://youtu.be/Xv2ar6AKvGc"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block w-full p-6 bg-emerald-300 hover:bg-emerald-200 text-emerald-950 font-bold text-xl rounded-lg transition-all duration-300 transform hover:scale-105 active:scale-95 text-center"
+                >
+                  View Video
+                </a>
+                <button 
+                  onClick={startQuiz}
+                  className="w-full p-6 bg-indigo-300 hover:bg-indigo-200 text-indigo-950 font-bold text-xl rounded-lg transition-all duration-300 transform hover:scale-105 active:scale-95"
+                >
+                  Take Quiz Again
+                </button>
+              </div>
             </>
           ) : (
             <>
@@ -190,7 +206,7 @@ export default function MindsetQuiz() {
                   <button
                     key={i}
                     onClick={() => handleAnswer(3 - i)}
-                    className="p-4 bg-indigo-900/40 hover:bg-emerald-800/60 text-lg font-bold rounded-lg border border-indigo-300/30 hover:border-indigo-300 transition-all text-indigo-50"
+                    className="p-4 bg-indigo-900/40 hover:bg-emerald-800/60 text-lg font-bold rounded-lg border border-indigo-300/30 hover:border-indigo-300 transition-all duration-300 transform hover:scale-105 active:scale-95 text-indigo-50"
                   >
                     {option}
                   </button>
